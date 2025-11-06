@@ -1,17 +1,7 @@
-# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
-
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-name: Rest API Tests
+name: Rest API Tests with Allure
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
     branches: [ "master" ]
 
 jobs:
@@ -28,19 +18,28 @@ jobs:
         distribution: 'temurin'
         cache: maven
     
-    - name: Run Tests with Allure
-      run: mvn clean test
-           mvn allure:report
-      continue-on-error: true
+    - name: Check Test Results
+      run: |
+          ls -la target/surefire-reports/ || echo "No surefire reports"
+           ls -la target/ || echo "Check target directory"
+           
     
-    - name: Upload  Allure Report
+    - name: Build and Test
+      run: |
+        mvn clean compile test-compile
+        mvn test
+    
+    - name: Generate Allure Report
+      run: mvn allure:report
+      if: always()
+    
+    - name: Upload Allure Report
       uses: actions/upload-artifact@v4
       if: always()
       with:
-         name: allure-report
-         path: target/site/allure-maven-plugin/
-         retention-days: 30
-
+        name: allure-report
+        path: target/site/allure-maven-plugin/
+    
     - name: Upload Test Results
       uses: actions/upload-artifact@v4
       if: always()
